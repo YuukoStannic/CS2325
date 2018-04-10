@@ -1,0 +1,210 @@
+               sip    main
+# **********************************************
+# FILE:  lab07.txt
+#
+# PURPOSE:  Perform a computation and displays
+#           results on console
+#
+# PROGRAMMERS: H. Paul Haiduk
+#                            <Team member #1>
+#                            <Team member #2>
+#
+# DATE:  Original version:   02/26/2018
+#        Completed version:  ??/??/????
+# **********************************************
+
+
+# **********************************************
+#       Data Declarations
+# **********************************************
+                org    0x20
+Number1:        db     127
+Number2:        db     128
+Sum:            bss    1
+Message:        db     "Sum is -> ",0
+
+
+# **********************************************
+#       Main Program
+# **********************************************
+                org    0x00
+main:
+                load   R0,0xAB
+                load   R1,1
+
+                load   R2,[Number1]
+                load   R3,[Number2]
+                add    R2,R2,R3
+                store  [Sum],R2
+
+                load   R3,Message
+                push   R3
+                call   PrintMessage
+                push   R2
+                call   PrintByte
+           
+                halt
+
+# **********************************************
+#       Functions/Procedures 
+# **********************************************
+                org    0x30
+# ########################################################
+#
+#  Calling sequence:  push value to be multiplied
+#                     call Mult10
+#
+#  Return:    value*10 in RA
+#
+#  Registers Used: R6 and R7
+#  
+# ########################################################  
+Mult10:         
+                push   RBP
+                move   RBP,RSP
+
+                rload  R6,2[RBP]
+
+# STUDENT COMPLETE HERE
+                move   R7,R6
+                sl     R6,2
+                add    R6,R6,R7
+                sl     R6,1
+                move   RA,R6
+
+                move   RSP,RBP
+                pop    RBP
+                ret    1
+# ########################################################
+#
+#  Calling sequence:  push value to be divided
+#                     call DivU10
+#
+#  Return:    quotient in RA, remainder in RB
+#
+#  Registers Used: R6, R7, R8, and R9
+# 
+# ########################################################
+DivU10:
+                push   RBP
+                move   RBP,RSP
+                push   R0
+
+                rload  R6,2[RBP]
+
+
+# STUDENT COMPLETE HERE
+                move   R7,R6
+                srl    R6,1        # q >> 1
+                srl    R7,2        # q >> 2
+                add    R6,R6,R7    # q = Anum >> 1 + Anum >> 2
+                
+                move   R7,R6       # save R6's constant
+                srl    R7,4        # q >> 4
+                add    R6,R6,R7    # q + ( q>>4 )
+
+                srl    R6,3        # q = q >> 3
+                move   R8,R6       # save variable to prepare
+                                   # to save and use for mult10
+                push   R6          
+                call   Mult10
+                move   R6,RA       #move mult10's result to R6
+                
+                load   R7,0xFF     #Load variable for negation
+                xor    R6,R6,R7    #Negating
+                add    R6,R6,R1    #complement
+
+                rload  RB,2[RBP]
+                add    RB,RB,R6    #r = aNum - (((q<<2) +q) <<1)
+
+                move   RA,R8
+                
+                load   R9,10
+                xor    R9,R9,R7
+                add    R9,R9,R1    #Turning 10 to -10
+                load   R0,9
+
+                jmpLT  RB<R0,normalReturn   #if r > 9
+                add    RA,RA,R1    #q += 1
+                add    RB,RB,R9    #r -= 10    
+
+normalReturn:   pop    R0
+                move   RSP,RBP
+                pop    RBP
+                ret    1
+
+# ########################################################
+#
+#  Calling sequence:  push address of message
+#                     call printMessage
+#
+#  Return:    message displayed on console
+#
+#  Registers Used: R6, R7
+# 
+# ########################################################
+PrintMessage:
+                push   RBP
+                move   RBP,RSP
+                push   R0
+
+                rload  R6,2[RBP]
+                load   R0,0
+# STUDENT COMPLETE HERE
+                iload  R7,[R6]
+while:          
+                jmpeq  R7=R0,msgReturn
+                move   RF,R7
+                push   R7
+                load   R7,1
+                add    R6,R7,R6
+                pop    R7
+                iload  R7,[R6]
+                jmp    while                
+
+
+msgReturn:      pop    R0
+                move   RSP,RBP
+                pop    RBP
+                ret    1
+# ########################################################
+#
+#  Calling sequence:  push value to be displayed
+#                     call PrintByte
+#
+#  Return:    displays value of a byte as 
+#             ASCII characters on console -- RECURSIVELY
+#
+#  Registers Used:  R6 and R7
+#  
+# 
+# ########################################################
+PrintByte:
+                push   RBP
+                move   RBP,RSP
+                push   R0
+
+                rload  R6,2[RBP]
+                load   R0,10
+                jmpLT  R6<R0,singleDigit
+
+ # STUDENT COMPLETE HERE
+                push   R6
+                call   DivU10
+                move   R6,RA
+                push   R6
+                call   PrintByte
+                rload  R6,2[RBP]
+                push   R6
+                call   DivU10
+                move   R6,RB
+
+singleDigit:
+                pop    R0
+                load   R7,0x30
+                or     RF,R7,R6    # display ASCII of digit
+
+printReturn:
+                move   RSP,RBP
+                pop    RBP
+                ret    1 

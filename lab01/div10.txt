@@ -1,0 +1,18 @@
+As seen in professor haiduk's example:
+
+    def div10( aNum ):
+    # NOTE:  This works only for 8-bit unsigneds
+    # by: H. Paul Haiduk derived from insights in
+    # Hacker's Delight, 2nd ed.
+        q = (aNum >> 1) + (aNum >> 2)
+        q = q + (q >> 4)
+    #    q = q + (q >> 8)  # use this if 16-bit
+    #    q = q + (q >> 16) # use this if 32-bit
+        q = q >> 3
+        r = aNum - (((q << 2) + q) << 1)
+        if (r > 9):
+            q += 1
+            r -= 10
+        return (q,r)   # note return of tuple
+
+
